@@ -126,7 +126,11 @@ class VertexArray(Component):
             if data is not None and len(data) : #check if it is empty
                 # bind a new VBO, upload it to GPU, declare size and type
                 self._buffers.append(gl.glGenBuffers(1))
-                data = np.array(data, np.float32, copy=False)
+
+                # ISSUE 1, numPy compatibility problems
+                data = np.asarray(data, np.float32)
+                # ISSUE 1, numPy compatibility problems
+
                 nb_primitives, size = data.shape
                 gl.glEnableVertexAttribArray(loc)
                 gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self._buffers[-1])
@@ -139,7 +143,11 @@ class VertexArray(Component):
         self._arguments = (0, nb_primitives)
         if self._index is not None and len(self._index): #check if list is empty
             self._buffers += [gl.glGenBuffers(1)]
-            index_buffer = np.array(self._index, np.int32, copy=False)
+            
+            # ISSUE 2, numPy compatibility problems
+            index_buffer = np.asarray(self._index, np.int32)
+            # ISSUE 2, numPy compatibility problems
+
             gl.glBindBuffer(gl.GL_ELEMENT_ARRAY_BUFFER, self._buffers[-1])
             gl.glBufferData(gl.GL_ELEMENT_ARRAY_BUFFER, index_buffer, self._usage)
             self._draw_command = gl.glDrawElements
