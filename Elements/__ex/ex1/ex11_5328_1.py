@@ -1,10 +1,13 @@
 import numpy as np
 import math
 
+from OpenGL.GL import GL_TRIANGLES
+
 import Elements.pyECSS.math_utilities as util
 from Elements.pyECSS.Entity import Entity
 from Elements.pyECSS.Component import RenderMesh
 from Elements.pyGLV.GL.Scene import Scene
+from Elements.pyECSS.Event import Event
 
 from Elements.pyGLV.GUI.Viewer import RenderGLStateSystem # Required for the wireframe toggle
 
@@ -30,25 +33,9 @@ node4 = scene.world.createEntity(Entity(name="node4"))
 scene.world.addEntityChild(rootEntity, node4)
 mesh4 = scene.world.addComponent(node4, RenderMesh(name="mesh4"))
 
-
 axes = scene.world.createEntity(Entity(name="axes"))
 scene.world.addEntityChild(rootEntity, axes)
 axes_mesh = scene.world.addComponent(axes, RenderMesh(name="axes_mesh"))
-
-# Event manager
-# TODO: sphere wireframe 
-
-eManager = scene.world.eventManager
-gWindow = scene.renderWindow
-gGUI = scene.gContext
-
-renderGLEventActuator = RenderGLStateSystem()
-
-eManager._subscribers['OnUpdateWireframe'] = gWindow
-eManager._actuators['OnUpdateWireframe'] = renderGLEventActuator
-eManager._subscribers['OnUpdateCamera'] = gWindow 
-eManager._actuators['OnUpdateCamera'] = renderGLEventActuator
-
 
 #Simple Cube
 # vertexCube = np.array([
@@ -139,7 +126,7 @@ generateSphere(2, 36, 12)
 mesh4.vertex_attributes.append(vertexSphere)
 mesh4.vertex_attributes.append(colorSphere)
 mesh4.vertex_index.append(indexSphere)
-vArray4 = scene.world.addComponent(node4, VertexArray())
+vArray4 = scene.world.addComponent(node4, VertexArray(primitive=GL_TRIANGLES))
 
 ########
 
@@ -165,15 +152,42 @@ scene.world.print()
 
 running = True
 # MAIN RENDERING LOOP
-scene.init(imgui=True, windowWidth = winWidth, windowHeight = winHeight, windowTitle = "Ex1.1 CSD5328")
+scene.init(imgui = True, windowWidth = winWidth, windowHeight = winHeight, windowTitle = "Ex1.1 CSD5328")
+
+# Event manager, after the scene initialisation
+
+eManager = scene.world.eventManager
+gWindow = scene.renderWindow
+gGUI = scene.gContext
+
+renderGLEventActuator = RenderGLStateSystem()
+
+eManager._subscribers['OnUpdateWireframe'] = gWindow
+eManager._actuators['OnUpdateWireframe'] = renderGLEventActuator
+eManager._publishers['OnUpdateWireframe'] = gGUI
+
+eManager._subscribers['OnUpdateCamera'] = gWindow 
+eManager._actuators['OnUpdateCamera'] = renderGLEventActuator
+eManager._publishers['OnUpdateCamera'] = gGUI
 
 # pre-pass scenegraph to initialise all GL context dependent geometry, shader classes
 # needs an active GL context
 scene.world.traverse_visit(initUpdate, scene.world.root)
 
+# Wireframe toggle
+wireFrameToggle = False
+
 while running:
     running = scene.render()
     displayGUI_text(example_description)
+
+    changed = gGUI._checkbox
+    currentWireframeState = gGUI._checkbox
+    if changed:
+        wireFrameToggle = currentWireframeState
+        event = Event(name = 'OnUpdateWireframe', id = None, value = wireFrameToggle)
+        eManager.notify('OnUpdateWireframe', event)
+
     scene.world.traverse_visit(renderUpdate, scene.world.root)
     scene.render_post()
     
