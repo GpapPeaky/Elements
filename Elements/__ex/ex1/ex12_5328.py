@@ -483,7 +483,12 @@ def main(imguiFlag = False):
     # Add RenderWindow to the EventManager publishers
     eManager._publishers[updateBackground.name] = gGUI
 
+    # We will update this to +1 deg every frame   
+    theta = 1.0
+
     while running:
+
+        theta += 1.0
 
         # Other imgui settings
 
@@ -515,6 +520,7 @@ def main(imguiFlag = False):
 
         # GameObjectEntity realted GUI
         houseCube.drawSelfGui(imgui) # Just call imgui???, sure wtf
+
         houseRoof.drawSelfGui(imgui)
         mantri.drawSelfGui(imgui)
         terrainGameObjectEntity.drawSelfGui(imgui)
@@ -530,6 +536,21 @@ def main(imguiFlag = False):
 
         if houseRoof.visible:
             houseRoof.preDraw() 
+            rotation_angle = theta
+
+            scale_factor = 1.0 + 0.5 * np.sin(np.radians(theta * 2))
+        
+            translation = np.array([0, 1, 0])                               # keep it above the cube
+            rotation = np.radians([rotation_angle, rotation_angle, 0])      # rotate around X and Y
+            scale = np.array([scale_factor, scale_factor, scale_factor])
+        
+            # Combine all transforms
+            #
+            #
+            #
+            # This hard sets the rotation to theta, we need to update it each frame
+            # so we need to have variables when applying the TRS
+            houseRoof.trans.trs = composeTRS(translation, rotation, scale)
             scene.world.traverse_visit(renderUpdate, houseRoof)
 
         # --- Home 2
