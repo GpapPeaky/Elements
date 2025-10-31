@@ -112,7 +112,7 @@ mesh4.vertex_attributes.append(vertices)
 mesh4.vertex_attributes.append(Texture.CUBE_TEX_COORDINATES)
 mesh4.vertex_index.append(indices)
 vArray4 = scene.world.addComponent(node4, VertexArray())
-shaderDec4 = scene.world.addComponent(node4, ShaderGLDecorator(Shader(vertex_source = Shader.SIMPLE_TEXTURE_VERT, fragment_source=Shader.SIMPLE_TEXTURE_FRAG)))
+shaderDec4 = scene.world.addComponent(node4, ShaderGLDecorator(Shader(vertex_source = Shader.PEAKY_TEXTURE_VERT, fragment_source=Shader.PEAKY_TEXTURE_FRAG)))
 
 
 
@@ -180,8 +180,9 @@ projMat = util.perspective(50.0, 1.0, 0.01, 10.0)
 
 gWindow._myCamera = view # otherwise, an imgui slider must be moved to properly update
 
+# Rotation
+theta = 0;
 
-model_cube = trans4.trs
 # OR
 # model_cube = util.scale(0.3) @ util.translate(0.0,0.5,0.0) ## COMPLETELY OVERRIDE OBJECT's TRS
 # OR
@@ -191,11 +192,19 @@ model_terrain_axes = terrain.getChild(0).trs # notice that terrain.getChild(0) =
 # OR 
 # model_terrain_axes = util.translate(0.0,0.0,0.0) ## COMPLETELY OVERRIDE OBJECT's TRS
 
-texturePath = TEXTURE_DIR / "uoc_logo.png"
+texturePath = TEXTURE_DIR / "bigfella.png"
 texture = Texture(texturePath)
 shaderDec4.setUniformVariable(key='ImageTexture', value=texture, texture=True)
 
 while running:
+    theta += 2;
+
+    # Apply some rotation,
+    # NOTE: Always do S R T for model
+    # and P V M inside the shader
+    trans4.trs = util.scale(util.sincos(theta)[0], util.sincos(theta)[0], util.sincos(theta)[0]) @ util.rotate((1, 0, 0), theta) # @ util.translate(0, 0, 0)
+    model_cube = trans4.trs
+
     running = scene.render()
     displayGUI_text(example_description)
     scene.world.traverse_visit(renderUpdate, scene.world.root)
@@ -207,6 +216,8 @@ while running:
     model_cube = trans4.l2world
     axes_shader.setUniformVariable(key='modelViewProj', value=mvp_axes, mat4=True)
     terrain_shader.setUniformVariable(key='modelViewProj', value=mvp_terrain, mat4=True)
+
+    # Pass these as a uniform as well, to be done faster
     shaderDec4.setUniformVariable(key='model', value=model_cube, mat4=True)
     shaderDec4.setUniformVariable(key='View', value=view, mat4=True)
     shaderDec4.setUniformVariable(key='Proj', value=projMat, mat4=True)

@@ -235,6 +235,48 @@ class Shader(Component):
             normal = mat3(transpose(inverse(weightedModel))) * vNormal.xyz;
         }
     """
+    PEAKY_TEXTURE_VERT = """
+        #version 410
+
+        layout (location=0) in vec4 vPos;
+        layout (location=1) in vec2 vTexCoord;
+
+        out vec2 fragmentTexCoord;
+
+        // The uniforms, when created
+        // require that the key passed inside
+        // the gl function, is the same
+        // as the name of these variables here,
+        // same as the type
+        uniform mat4 model;
+        uniform mat4 View;
+        uniform mat4 Proj;
+
+        void main()
+        {
+            gl_Position = Proj * View * model * vPos;
+            fragmentTexCoord = vTexCoord;
+        }
+    """
+    PEAKY_TEXTURE_FRAG = """
+        #version 410
+        
+        in vec2 fragmentTexCoord;
+
+        out vec4 color;
+
+        uniform sampler2D img;
+
+        void main()
+        {
+            //vec2 flipped_texcoord = vec2(fragmentTexCoord.x, 1.0 - fragmentTexCoord.y);
+            //color = texture(img,flipped_texcoord);
+
+            color = texture(img,fragmentTexCoord);
+            // color = vec4(fragmentTexCoord, 0.0, 1.0);
+        }
+    """
+
     SIMPLE_TEXTURE_VERT = """
         #version 410
 
